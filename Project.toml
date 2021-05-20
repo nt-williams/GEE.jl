@@ -1,0 +1,13 @@
+name = "GEE"
+uuid = "1c21cb60-d3e2-4d17-895b-c8c2f0b04b5b"
+authors = ["Nick Williams <ntwilliams.personal@gmail.com> and contributors"]
+version = "0.1.0"
+
+[compat]
+julia = "1"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]
