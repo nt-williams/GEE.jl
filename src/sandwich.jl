@@ -1,34 +1,25 @@
-function StandardizedResiduals(x::GeneralizedEstimatingEquation)
-    # (Y_ij - μ_ij) / √(VarianceFunction)
+VarianceFunction(::Type{Binomial{T}}, μ̂::Vector{<:Real}) where {T<:Real} = μ̂ .* (1 .- μ̂)
+VarianceFunction(::Type{Normal{T}}, μ̂::Vector{<:Real}) where {T<:Real} = 1
+
+pearson(d::UnivariateDistribution, Y, μ̂) = (Y .- μ̂) ./ sqrt(VarianceFunction(typeof(d), μ̂))
+
+function ϕ(e)
+    phi, m, n = 0, length(e), maximum(length.(e))
+    for i in 1:m
+        for j in 1:length(e[i])
+            phi += e[i][j]^2
+        end
+    end
+    phi / (n * m)
 end
 
-VarianceFunction(::Type{Binomial}, μ::Vector{Real}) = μ .* (1 .- μ)
+# D' = X'A where A is diagonal matrix with Var(Y_ij|X_ij), i.e., variance function
+D(d::UnivariateDistribution, X::Matrix, μ̂::Vector) = X .* VarianceFunction(typeof(d), μ̂)
 
-mutable struct V
-    μ::Vector{Real}
-    corstr::CorrelationStructure
-end
+# V is the working covariance matrix, simple for independence correlation
+V(corstr::CorrelationStructure, μ̂::Vector) = sqrt(diagm(μ̂)) * corstr() * sqrt(diagm(μ̂))
 
-(::V) = sqrt(diagm(V.μ)) * V.corstr(length(V.μ))() * sqrt(diagm(μ)) # A^.5 * Corr(Y_ij) * A^0.5
-
-# based on http://biostat.jhsph.edu/~jleek/teaching/2011/754/lecture7updated.pdf
-Aᵢ, Bᵢ = [], []
-for id in nhefs.seqn
-    Xᵢ = init.mm.m[nhefs.seqn .== id, :]
-    nᵢ = size(Xᵢ, 1)
-    μ̂ᵢ = μ̂[nhefs.seqn .== id]
-    rᵢ = r[nhefs.seqn .== id]
-    Dᵢ = Xᵢ .* VarianceFunction(Binomial, μ̂ᵢ)
-    Vᵢ = sqrt(diagm(μ̂ᵢ)) * IndependenceCorrelation(nᵢ)() * sqrt(diagm(μ̂ᵢ))
-    push!(Aᵢ, Dᵢ' * Vᵢ^-1 * Dᵢ)
-    push!(Bᵢ, Dᵢ' * Vᵢ^-1 * rᵢ * rᵢ' * Vᵢ^-1 * Dᵢ)
-end
-
-sandwich(bread, meat) = bread^-1 * meat * bread^-1
 bread(D, V) = D' * V^-1 * D
 meat(D, V, resid) = D' * V^-1 * resid * resid' * V^-1 * D
-
-Â = reduce(+, Aᵢ)
-B̂ = reduce(+, Bᵢ)
-
-sqrt.(diag(Â^-1 * B̂ * Â^-1))
+sandwich(bread::Vector{Matrix{T}}, meat::Vector{Matrix{T}}) where {T<:Real} = sum(bread)^-1 * sum(meat) * sum(bread)^-1
+robustse(bread, meat) = sqrt.(diag(sandwich(bread, meat)))

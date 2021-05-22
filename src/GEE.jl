@@ -11,5 +11,6 @@ export IndependenceCorrelation
 
 include("CorrelationStructure.jl")
 include("fit.jl")
+include("sandwich.jl")
 
 end

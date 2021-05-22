@@ -3,6 +3,10 @@ abstract type GeneralizedEstimatingEquationsModel{T} <: StatsModels.RegressionMo
 mutable struct GeneralizedEstimatingEquation{T} <: GeneralizedEstimatingEquationsModel{T}
     resp::GLM.GlmResp
     corstr::CorrelationStructure
+    id::Vector
+    y::Vector{<:Real}
+    μ̂::Vector{<:Real}
+    β̂::Vector{<:Real}
 end
 
 # step 1: generate initial estimates of β̂
@@ -11,12 +15,26 @@ function initialfit(::Type{GeneralizedEstimatingEquation},
     data,
     d::UnivariateDistribution = Normal(), 
     l::Link = canonicallink(d))
-    # This needs to fit the GLM and extract the GlmResp object
+    return glm(f, data, d, l).model
+    # This needs to fit the GLM and extract the GeneralizedLinearModel object
+end
+
+mutable struct GeeComponents
+    K
+    β̂
+    D
+    V
+    resid
+    e
+    ϕ
+    iter
+    converged
 end
 
 # step 2: using current estimates of α (function of working covariance) and ϕ, compute Vᵢ and update β̂
-function updateβ!(x::GeneralizedEstimatingEquation)
-    # solve for a new β by using equation 13.2 (pg 356) in https://onlinelibrary.wiley.com/doi/pdf/10.1002/9781119513469.ch13
+# slide 34 http://biostat.jhsph.edu/~jleek/teaching/2011/754/lecture7updated.pdf
+function updateβ(gee::GeeComponents)
+    gee.β̂ + sum([gee.D'[j] * gee.V[j]^-1 * gee.D[j] for j in 1:gee.K])^-1 * sum([gee.D'[j] * gee.V[j]^-1 * gee.resid[j] for j in 1:gee.K])
 end
 
 # step 3: using new β̂, obtain updated α and ϕ using standardized residuals
