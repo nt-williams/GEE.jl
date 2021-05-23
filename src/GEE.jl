@@ -7,10 +7,17 @@ using Distributions
 
 using GLM: Link
 
-export IndependenceCorrelation
+export GeneralizedEstimatingEquationsModel
+export GeneralizedEstimatingEquation
+export CorrelationStructure
+export Independence
+export Exchangeable
+export Unstructered
+export fit
 
-include("CorrelationStructure.jl")
+include("workingstructures.jl")
 include("fit.jl")
+include("correlation.jl")
 include("sandwich.jl")
 
 end
