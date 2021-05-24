@@ -1,6 +1,6 @@
-abstract type GeneralizedEstimatingEquationsModel{T} <: StatsModels.RegressionModel end
+abstract type GeneralizedEstimatingEquationsModel <: StatsModels.RegressionModel end
 
-struct GeneralizedEstimatingEquation{T} <: GeneralizedEstimatingEquationsModel{T}
+struct GeneralizedEstimatingEquation <: GeneralizedEstimatingEquationsModel
     resp
     μ̂
     β̂
@@ -64,13 +64,17 @@ function fit(::Type{GeneralizedEstimatingEquation},
     maxit = 20, 
     tolerance = 0.00001)
 
+    sch = schema(f, data)
+    f = apply_schema(f, sch)
+    y, X = modelcols(f, data)
+
     # step 1: generate initial estimates of β̂
     initial = initialfit(GeneralizedEstimatingEquation, f, data, d, l)
 
     resp = GEE.setup(
         id,
-        initial.rr.y, 
-        initial.pp.X, 
+        y, 
+        X, 
         initial.rr.mu, 
         initial.rr.wrkresid, 
         initial.pp.beta0
@@ -102,7 +106,6 @@ function fit(::Type{GeneralizedEstimatingEquation},
         end
     end
 
-    # need to return the GeneralizedEstimatingEquation object
     GeneralizedEstimatingEquation(
         initial, 
         collect(Iterators.flatten(resp.μᵢ)), 
@@ -113,5 +116,21 @@ function fit(::Type{GeneralizedEstimatingEquation},
         sandwich(bread.(D̂, V̂), meat.(D̂, V̂, resp.rᵢ)), 
         resp.iter, 
         resp.converged
+    )
+end
+
+coef(m::GeneralizedEstimatingEquation) = m.β
+
+function StatsBase.coeftable(m::GeneralizedEstimatingEquation)
+    co = coef(m)
+    se = stderror(m)
+    z = co ./ se
+    pvalue = ccdf.(Chisq(1), abs2.(z))
+    CoefTable(
+        hcat(co, se, z, pvalue),
+        ["Coef.", "Std. Error", "z", "Pr(>|z|)"],
+        coefnames(m),
+        4, # pvalcol
+        3, # teststatcol
     )
 end

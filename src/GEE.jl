@@ -3,17 +3,30 @@ module GEE
 using LinearAlgebra
 using GLM
 using StatsModels
+using StatsBase
 using Distributions
 
 using GLM: Link
 
-export GeneralizedEstimatingEquationsModel
-export GeneralizedEstimatingEquation
-export CorrelationStructure
-export Independence
-export Exchangeable
-export Unstructered
-export fit
+import StatsBase: fit, coef
+
+export GeneralizedEstimatingEquationsModel,
+       GeneralizedEstimatingEquation,
+       CorrelationStructure,
+       Independence,
+       Exchangeable,
+       Unstructered,
+       fit,
+       vcov,
+       coef,
+       stderror,
+       Normal, 
+       Binomial, 
+       Poisson,
+       LogitLink, 
+       IdentityLink, 
+       LogLink,
+       @formula
 
 include("workingstructures.jl")
 include("fit.jl")
