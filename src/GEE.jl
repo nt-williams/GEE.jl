@@ -1,14 +1,12 @@
 module GEE
 
-using LinearAlgebra
-using GLM
-using StatsModels
-using StatsBase
-using Distributions
-
-using GLM: Link
+using LinearAlgebra, Distributions, StatsBase, GLM, Tables
+using StatsBase: CoefTable, StatisticalModel, RegressionModel
+using LinearAlgebra: BlasReal
+using GLM: Link, LinPred
 
 import StatsBase: fit, coef
+import GLM: linkfun
 
 export GeneralizedEstimatingEquationsModel,
        GeneralizedEstimatingEquation,
@@ -28,8 +26,10 @@ export GeneralizedEstimatingEquationsModel,
        LogLink,
        @formula
 
+abstract type GeneralizedEstimatingEquationModel <: StatisticalModel end
+
 include("workingstructures.jl")
-include("fit.jl")
+include("generalizedestimatingequation.jl")
 include("correlation.jl")
 include("sandwich.jl")
 
